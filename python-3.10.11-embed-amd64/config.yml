@@ -64,7 +64,7 @@ exam:
 
 # 搜索器选择 (可同时使用多个搜索器, 以 yaml 语法中 list 格式添加, `type`字段决定搜索器类型)
 # 可用的搜索器有: restApiSearcher jsonFileSearcher sqliteSearcher enncySearcher cxSearcher LemonSearcher
-searchers:
+# searchers:
   # 本地 JSON 数据库搜索器 (key为题, value为答案)
   # - type: jsonFileSearcher
   #   file_path: "questions.json"  # 数据库文件路径
