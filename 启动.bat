@@ -1,5 +1,7 @@
 @echo off
 chcp 65001 >nul
+rem 启用 UTF-8 模式, 否则输出被重定向到文件/管道时打印中文会 UnicodeEncodeError
+set PYTHONUTF8=1
 cd /d "%~dp0"
 
 rem 首次运行时自动下载 Python 运行时并安装依赖

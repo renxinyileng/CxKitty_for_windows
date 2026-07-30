@@ -20,6 +20,12 @@ import tempfile
 import traceback
 from pathlib import Path
 
+# Windows 上 stdout 不是控制台 (被重定向/管道) 时, python 会退回到 locale 编码
+# (如 cp1252), 打印中文直接 UnicodeEncodeError。这里强制按 UTF-8 输出。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 APP_DIR = Path(__file__).resolve().parent.parent / "app"
 # 程序会以相对路径读取 config.yml / pyproject.toml, 故必须切到 app 目录
 os.chdir(APP_DIR)
