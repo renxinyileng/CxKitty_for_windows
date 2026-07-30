@@ -18,7 +18,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-            python-version: '3.10'
+            python-version: '3.13'
             architecture: 'x64'
             cache: 'pip'
       - name: Pip Install
@@ -35,10 +35,10 @@ jobs:
         run: poetry run pyinstaller -F "main.py" --clean --dist ./out --name "CxKitty"  --add-data ".venv\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_shared.dll;onnxruntime\capi"  --add-data ".venv\Lib\site-packages\ddddocr\common.onnx;ddddocr" --add-data ".venv\Lib\site-packages\ddddocr\common_det.onnx;ddddocr" --add-data ".venv\Lib\site-packages\ddddocr\common_old.onnx;ddddocr"
       - name: Create Executable File (Linux)
         if: runner.os == 'Linux'
-        run: poetry run pyinstaller -F "main.py" --clean --dist ./out --name "CxKitty"  --add-data ".venv/lib/python3.10/site-packages/onnxruntime/capi/libonnxruntime_providers_shared.so:onnxruntime\capi"  --add-data ".venv/lib/python3.10/site-packages/ddddocr/common.onnx:ddddocr" --add-data ".venv/lib/python3.10/site-packages/ddddocr/common_det.onnx:ddddocr" --add-data ".venv/lib/python3.10/site-packages/ddddocr/common_old.onnx:ddddocr"
+        run: poetry run pyinstaller -F "main.py" --clean --dist ./out --name "CxKitty"  --add-data ".venv/lib/python3.13/site-packages/onnxruntime/capi/libonnxruntime_providers_shared.so:onnxruntime\capi"  --add-data ".venv/lib/python3.13/site-packages/ddddocr/common.onnx:ddddocr" --add-data ".venv/lib/python3.13/site-packages/ddddocr/common_det.onnx:ddddocr" --add-data ".venv/lib/python3.13/site-packages/ddddocr/common_old.onnx:ddddocr"
       - name: Create Executable File (macOS)
         if: runner.os == 'macOS'
-        run: poetry run pyinstaller -F "main.py" --clean --dist ./out --name "CxKitty" --add-data ".venv/lib/python3.10/site-packages/ddddocr/common.onnx:ddddocr" --add-data ".venv/lib/python3.10/site-packages/ddddocr/common_det.onnx:ddddocr" --add-data ".venv/lib/python3.10/site-packages/ddddocr/common_old.onnx:ddddocr"
+        run: poetry run pyinstaller -F "main.py" --clean --dist ./out --name "CxKitty" --add-data ".venv/lib/python3.13/site-packages/ddddocr/common.onnx:ddddocr" --add-data ".venv/lib/python3.13/site-packages/ddddocr/common_det.onnx:ddddocr" --add-data ".venv/lib/python3.13/site-packages/ddddocr/common_old.onnx:ddddocr"
 
 
       - name: Copy Required Files

@@ -5,7 +5,7 @@ description = "超星学习通答题姬. 媒体播放、章节测验、课程考
 readme = "README.md"
 license = "GPL-3.0-only"
 authors = [{ name = "SocialSisterYi", email = "1440239038@qq.com" }]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "requests>=2.32.3,<3",
     "qrcode>=8.2,<9",
@@ -22,9 +22,6 @@ dependencies = [
     # 与 ddddocr 保持一致: 桌面端用完整版, linux (docker) 用 headless 版, 以省去 GUI 系统库依赖
     "opencv-python>=4.12,<6; sys_platform == 'win32' or sys_platform == 'darwin'",
     "opencv-python-headless>=4.12,<6; sys_platform == 'linux'",
-    # ddddocr 的间接依赖, 这里显式约束: onnxruntime 自 1.24 起不再提供 cp310 wheel,
-    # 而本仓库使用的嵌入式解释器为 python 3.10, 故锁定在仍有 cp310 wheel 的 1.23.x
-    "onnxruntime>=1.23.2,<1.24",
 ]
 
 [project.urls]
