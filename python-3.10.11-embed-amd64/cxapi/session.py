@@ -60,7 +60,8 @@ def identify_captcha(captcha_img: bytes) -> str:
 
     # 交给 OCR 识别
     _, img_data = cv2.imencode(".png", img)
-    code = ocr.classification(img_data.tostring())
+    # numpy 2.0 已移除 ndarray.tostring(), 使用等价的 tobytes()
+    code = ocr.classification(img_data.tobytes())
     return code
 
 

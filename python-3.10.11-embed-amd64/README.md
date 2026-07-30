@@ -72,14 +72,29 @@
 
 ### 💻本地化构建项目
 
-使用 Python 版本 >= 3.10.0
+使用 Python 版本 >= 3.10.0, < 3.14, 以及 poetry >= 2.0
 
 clone 项目到本地，并使用 poetry 安装依赖和管理 venv
 
 ```bash
 git clone 'https://github.com/SocialSisterYi/CxKitty'
 cd CxKitty
-poetry install
+poetry install --only main
+```
+
+依赖默认从清华 PyPI 镜像源拉取（见 `pyproject.toml` 中的 `[[tool.poetry.source]]`），
+若该镜像不可用，可改用官方源：
+
+```bash
+poetry source remove tsinghua
+poetry lock
+poetry install --only main
+```
+
+也可以不使用 poetry，直接按 `requirements.txt` 安装（Windows 嵌入式解释器即用此方式）
+
+```bash
+pip install -r requirements.txt
 ```
 
 运行主程序

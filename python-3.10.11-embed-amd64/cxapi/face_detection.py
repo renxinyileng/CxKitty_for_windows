@@ -79,7 +79,7 @@ class FaceDetectionDto:
                 "puid": self.session.acc.puid,
             },
             files={
-                "file": (f"{get_ts()}.jpg", face_img_data, "image/jpeg"),
+                "file": (f"{get_ts()}.jpg", face_img_data.tobytes(), "image/jpeg"),
             },
         )
         json_content = resp.json()
