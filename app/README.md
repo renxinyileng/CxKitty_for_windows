@@ -78,10 +78,11 @@
 > 见仓库根目录的 [README](../README.md)，无需手工执行下面的步骤。
 
 clone 项目到本地，并使用 poetry 安装依赖和管理 venv
+（本 fork 的程序本体在 `app/` 子目录下，`pyproject.toml` 也在其中）
 
 ```bash
-git clone 'https://github.com/SocialSisterYi/CxKitty'
-cd CxKitty
+git clone 'https://github.com/renxinyileng/CxKitty_for_windows'
+cd CxKitty_for_windows/app
 poetry install --only main
 ```
 
@@ -114,20 +115,16 @@ poetry run python3 main.py
 docker pull socialsisteryi/cx-kitty
 ```
 
-~~或手动构建镜像~~
+> 该镜像由**上游**发布，不包含本 fork 的依赖升级与 Python 3.13 相关改动，
+> 想用本仓库的版本请按下面的步骤自行构建。
 
-<details>
-<summary>展开</summary>
-
-clone 项目到本地，并开始构建镜像
+手动构建镜像（注意构建上下文是 `app/`，Dockerfile 在其中）
 
 ```bash
-git clone 'https://github.com/SocialSisterYi/CxKitty'
-cd CxKitty
-docker build --tag socialsisteryi/cx-kitty .
+git clone 'https://github.com/renxinyileng/CxKitty_for_windows'
+cd CxKitty_for_windows
+docker build --tag cx-kitty app/
 ```
-
-</details>
 
 运行容器
 
@@ -149,20 +146,32 @@ docker build --tag socialsisteryi/cx-kitty .
 
 由于程序使用 TUI，Docker 的日志服务会自动捕获并保存容器的 stdo，所以建议使用参数`--log-opt max-size=xx`限制容器的日志大小，以免造成过多的磁盘占用
 
+在 `app/` 目录下执行（`config.yml` 等文件都在这里）：
+
 ```bash
 docker run -it \
   --name cx_kitty \
-  -v "$PWD/session:/app/session"  \
+  -v "$PWD/session:/app/session" \
   -v "$PWD/export:/app/export" \
   -v "$PWD/logs:/app/logs" \
   -v "$PWD/faces:/app/faces" \
   -v "$PWD/config.yml:/app/config.yml" \
-  #-v "$PWD/questions.json:/app/questions.json" \
-  #-v "$PWD/questions.db:/app/questions.db" \
   --log-opt max-size=10m \
-  socialsisteryi/cx-kitty
+  cx-kitty
+```
+
+按需追加题库映射（原示例把这两行以 `#` 注释写在续行中间，实际会把后面的内容一起吃掉，
+无法直接复制运行，故移出）：
+
+```bash
+  -v "$PWD/questions.json:/app/questions.json" \
+  -v "$PWD/questions.db:/app/questions.db" \
 ```
 ### ▶️可执行文件构建 (Windows/Linux/MacOS) (不建议使用)
+
+> 下面链接指向的是**上游仓库**的构建产物。本 fork 的 `app/.github/workflows/package-exe.yml`
+> 不在仓库根目录，GitHub 不会执行它，因此本仓库没有对应的自动构建；
+> Windows 用户请直接用根目录的 `启动.bat`（自动下载嵌入式 Python 并装好依赖）。
 
 从[Action](https://github.com/SocialSisterYi/CxKitty/actions/workflows/package-exe.yml)中获取最新的自动构建文件,解压后执行文件
 
