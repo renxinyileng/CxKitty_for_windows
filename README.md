@@ -2,6 +2,8 @@
 
 在 Windows 上快捷地使用 CxKitty，原项目 <https://github.com/SocialSisterYi/CxKitty>
 
+程序以命令行 / TUI 方式运行，不启动浏览器、不渲染网页，目的是减少不必要的性能开销。
+
 Python 运行时不再随仓库分发，改为由安装脚本按需下载：脚本会去 python.org 探测
 3.13 系列中**最新的、且提供 Windows 嵌入式发行版的补丁版本**，下载后自动装好 pip 和全部依赖。
 这样解释器和依赖都能保持在最新的安全补丁版本，不必等仓库更新。
@@ -58,7 +60,13 @@ python.org 只为 Windows 提供嵌入式发行版，所以这两个平台改为
 cd app && ../.venv/bin/python main.py
 ```
 
-也可以直接用 Docker，见 [`app/README.md`](app/README.md) 的 Build 一节。
+也可以用 Docker（镜像基于 `python:3.13`，Linux 下装的是 headless 版 OpenCV，无需额外 GUI 系统库）：
+
+```bash
+docker build --tag cx-kitty app/
+```
+
+完整的容器运行参数（目录映射、日志大小限制等）见 [`app/README.md`](app/README.md) 的 Build 一节。
 
 ## 需要修改的配置
 
@@ -80,4 +88,5 @@ cd app && ../.venv/bin/python main.py
 
 ## 支持的 Python 版本
 
-`>= 3.11, < 3.14`。3.10 已于 2026 年 10 月结束支持，故不再作为目标版本。
+`>= 3.11, < 3.14`。3.10 将于 2026 年 10 月结束安全支持，且 3.10.11 已是该系列
+最后一个提供 Windows 嵌入式发行版的版本（之后的补丁版只发布源码），故不再作为目标版本。
