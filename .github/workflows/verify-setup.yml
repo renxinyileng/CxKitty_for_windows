@@ -1,0 +1,100 @@
+name: Verify Setup
+
+# 验证三个平台的环境准备脚本能真正跑通, 并对装出来的环境做离线冒烟测试。
+# 注意: app/.github/ 下的 workflow 不在仓库根目录, GitHub 不会执行, 那些是上游的发布流程。
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows (嵌入式 3.13)
+          - os: ubuntu-latest
+            name: Linux (venv)
+          - os: macos-latest
+            name: macOS (venv)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备环境 (Windows)
+        if: runner.os == 'Windows'
+        run: .\scripts\setup-windows.ps1
+
+      - name: 准备环境 (Linux)
+        if: runner.os == 'Linux'
+        run: ./scripts/setup-linux.sh
+
+      - name: 准备环境 (macOS)
+        if: runner.os == 'macOS'
+        run: ./scripts/setup-macos.sh
+
+      - name: 检查解释器版本 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .\runtime\python.exe -V
+          Get-Content .\runtime\python*._pth
+
+      - name: 检查解释器版本 (Unix)
+        if: runner.os != 'Windows'
+        run: ./.venv/bin/python -V
+
+      - name: 冒烟测试 (Windows)
+        if: runner.os == 'Windows'
+        run: .\runtime\python.exe .\scripts\smoke_test.py
+
+      - name: 冒烟测试 (Unix)
+        if: runner.os != 'Windows'
+        run: ./.venv/bin/python ./scripts/smoke_test.py
+
+      - name: 幂等性检查 (重复执行应跳过安装)
+        if: runner.os == 'Windows'
+        run: .\scripts\setup-windows.ps1
+
+  poetry:
+    name: poetry 依赖解析
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: 安装 poetry
+        run: pipx install "poetry>=2.0,<3"
+      - name: 校验 pyproject 与 lock 一致
+        working-directory: app
+        run: |
+          poetry check
+          poetry check --lock
+      - name: 按 lock 安装依赖
+        working-directory: app
+        run: poetry install --only main
+      - name: 冒烟测试
+        working-directory: app
+        run: poetry run python ../scripts/smoke_test.py
+
+  docker:
+    name: Docker 镜像构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建镜像
+        run: docker build --tag cxkitty:ci app/
+      - name: 容器内冒烟测试
+        run: |
+          docker run --rm --entrypoint poetry \
+            -v "$PWD/scripts:/smoke:ro" \
+            cxkitty:ci run python /smoke/smoke_test.py
