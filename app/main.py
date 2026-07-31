@@ -28,6 +28,13 @@ from logger import Logger
 from resolver import DocumetResolver, MediaPlayResolver, QuestionResolver
 from utils import __version__, ck2dict, sessions_load
 
+# Windows 上只有 stdout 接真实控制台时才用 UTF-8, 一旦被重定向到文件/管道就退回
+# locale 编码 (如 cp1252), 输出中文会直接 UnicodeEncodeError。启动脚本里虽然设了
+# PYTHONUTF8, 但直接用 runtime\python.exe main.py 拉起时不经过脚本, 故在此兜底。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 api = ChaoXingAPI()
 console = Console(height=config.TUI_MAX_HEIGHT)
 logger = Logger("Main")

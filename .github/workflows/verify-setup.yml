@@ -58,6 +58,20 @@ jobs:
         if: runner.os != 'Windows'
         run: ./.venv/bin/python ./scripts/smoke_test.py
 
+      # 回归检查: 输出被重定向时 windows 会退回 cp1252, 中文直接编码失败。
+      # 这里强制 cp1252 拉起主程序, 确认 main.py 里的兜底生效 (不经过 .bat 的 PYTHONUTF8)
+      - name: 中文输出回归检查 (Windows, 模拟 cp1252)
+        if: runner.os == 'Windows'
+        run: |
+          $env:PYTHONIOENCODING = "cp1252"
+          $out = (cmd /c "cd app && ..\runtime\python.exe main.py < NUL 2>&1") -join "`n"
+          if ($out -notmatch "会话存档为空") {
+              Write-Host $out
+              throw "main.py 在 cp1252 环境下未能正常输出中文"
+          }
+          Write-Host "ok: cp1252 环境下 logo 与中文提示均正常输出"
+          $LASTEXITCODE = 0
+
       - name: 幂等性检查 (重复执行应跳过安装)
         if: runner.os == 'Windows'
         run: .\scripts\setup-windows.ps1
