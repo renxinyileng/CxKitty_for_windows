@@ -1530,6 +1530,7 @@ files = [
 
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
+pillow = {version = ">=9.1.0", optional = true, markers = "extra == \"pil\" or extra == \"all\""}
 
 [package.extras]
 all = ["pillow (>=9.1.0)", "pypng"]
@@ -1797,4 +1798,4 @@ reference = "tsinghua"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "a1d5b2f3253f4577cd74ff6128a173dd5364d4cd2e1adb42bbda55f4a05a8171"
+content-hash = "6cb78082aa277dbd0d868a69a650ac212c4869c0778dc1a014577cf7814e6c3f"

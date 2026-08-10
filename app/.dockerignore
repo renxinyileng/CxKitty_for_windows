@@ -4,4 +4,4 @@ session/
 logs/
 questions.*
 export/*
-faces/*
+faces/*login_qr.png
