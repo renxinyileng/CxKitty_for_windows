@@ -132,3 +132,5 @@ session/*.json
 questions.*
 export/*
 faces/*
+# 二维码登录时临时生成的图片, 登录完成即删除
+login_qr.png

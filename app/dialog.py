@@ -1,6 +1,8 @@
 import re
 import sys
 import time
+from pathlib import Path
+from typing import Optional
 
 from qrcode import QRCode
 from rich.console import Console
@@ -21,6 +23,33 @@ from utils import (
     mask_phone,
     save_session
 )
+
+
+# 登录二维码图片保存路径 (相对工作目录, 即 app/)
+QR_IMAGE_PATH = Path("login_qr.png")
+
+# 等待多久仍未扫描, 就再提示一次图片路径 (秒)
+QR_SCAN_HINT_DELAY = 20
+
+
+def save_login_qr(url: str) -> Optional[Path]:
+    """将登录二维码渲染为图片文件
+    终端字体的宽高比、配色都可能让 ascii 二维码扫不出来, 故另存一份图片备用
+    Args:
+        url: 二维码内容 url
+    Returns:
+        Path: 图片绝对路径; 渲染失败 (如缺少 Pillow) 时为 None
+    """
+    try:
+        qr = QRCode(box_size=8, border=2)
+        qr.add_data(url)
+        qr.make(fit=True)
+        image_path = QR_IMAGE_PATH.resolve()
+        qr.make_image(fill_color="black", back_color="white").save(image_path)
+        return image_path
+    except Exception:
+        # 图片只是备用方案, 渲染失败不应该阻断登录流程
+        return None
 
 
 def logo(tui_ctx: Console) -> None:
@@ -66,34 +95,63 @@ def login(tui_ctx: Console, api: ChaoXingAPI):
         # 二维码登录
         if uname == "":
             api.qr_get()
+            qr_url = api.qr_geturl()
             qr = QRCode()
-            qr.add_data(api.qr_geturl())
+            qr.add_data(qr_url)
             qr.print_ascii()  # 打印二维码到终端
+
+            # 终端里的 ascii 二维码常常扫不出来, 同时落一份图片供手机扫描
+            qr_image_path = save_login_qr(qr_url)
+            if qr_image_path is not None:
+                tui_ctx.print(f"[yellow]二维码图片已生成: [/][cyan]{qr_image_path}")
+                tui_ctx.print("[yellow]若上方终端二维码扫不出来, 请打开该图片扫描")
+            else:
+                tui_ctx.print("[red]二维码图片生成失败, 请扫描上方终端二维码")
             tui_ctx.print("[yellow]等待扫描")
+
             flag_scanned = False
-            # 开始轮询二维码状态
-            while True:
-                qr_status = api.login_qr()
-                if qr_status["status"] == True:
-                    tui_ctx.print("[green]登录成功")
-                    api.accinfo()
-                    accinfo(tui_ctx, api)
-                    save_session(api.session.ck_dump(), api.acc)
-                    return
-                match qr_status.get("type"):
-                    case "1":
-                        tui_ctx.print("[red]二维码验证错误")
-                        break
-                    case "2":
-                        tui_ctx.print("[red]二维码已失效")
-                        break
-                    case "4":
-                        if not flag_scanned:
-                            tui_ctx.print(
-                                f"[green]二维码已扫描 name={qr_status['nickname']} puid={qr_status['uid']}"
-                            )
-                        flag_scanned = True
-                time.sleep(1.0)
+            flag_hinted = False
+            wait_since = time.time()
+            try:
+                # 开始轮询二维码状态
+                while True:
+                    qr_status = api.login_qr()
+                    if qr_status["status"] == True:
+                        tui_ctx.print("[green]登录成功")
+                        api.accinfo()
+                        accinfo(tui_ctx, api)
+                        save_session(api.session.ck_dump(), api.acc)
+                        return
+                    match qr_status.get("type"):
+                        case "1":
+                            tui_ctx.print("[red]二维码验证错误")
+                            break
+                        case "2":
+                            tui_ctx.print("[red]二维码已失效")
+                            break
+                        case "4":
+                            if not flag_scanned:
+                                tui_ctx.print(
+                                    f"[green]二维码已扫描 name={qr_status['nickname']} puid={qr_status['uid']}"
+                                )
+                            flag_scanned = True
+                    # 长时间没人扫, 多半是终端二维码不可用, 再把图片路径提示一次
+                    if (
+                        not flag_scanned
+                        and not flag_hinted
+                        and qr_image_path is not None
+                        and time.time() - wait_since >= QR_SCAN_HINT_DELAY
+                    ):
+                        tui_ctx.print(
+                            f"[yellow]已等待 {QR_SCAN_HINT_DELAY}s 仍未扫描, "
+                            f"建议直接打开图片扫描: [/][cyan]{qr_image_path}"
+                        )
+                        flag_hinted = True
+                    time.sleep(1.0)
+            finally:
+                # 二维码内容含一次性登录凭据, 用完即删
+                if qr_image_path is not None:
+                    qr_image_path.unlink(missing_ok=True)
         # 手机号+密码登录
         else:
             passwd = Prompt.ask("[yellow]请输入密码 (内容隐藏)", password=True, console=tui_ctx)

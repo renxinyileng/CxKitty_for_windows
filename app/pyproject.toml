@@ -8,7 +8,8 @@ authors = [{ name = "SocialSisterYi", email = "1440239038@qq.com" }]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "requests>=2.32.3,<3",
-    "qrcode>=8.2,<9",
+    # [pil] extra: 二维码登录会额外渲染一份 png 图片, 需要 Pillow
+    "qrcode[pil]>=8.2,<9",
     "rich>=15.0.0,<16",
     "pycryptodome>=3.23.0,<4",
     "lxml>=6.0.0,<7",
