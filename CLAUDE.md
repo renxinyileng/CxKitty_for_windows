@@ -136,6 +136,11 @@ AI 组，把各家答案归一化后投票，达到 `ai_min_votes` 的排到最�
 和直接传 ndarray）。`pyproject.toml` / `poetry.lock` / `requirements.txt` / `Dockerfile` /
 `.github/` / `run.bat` 也归本 fork 所有，不要用上游版本覆盖。
 
+**`scripts/*.ps1` 必须带 UTF-8 BOM。** `启动.bat` 调的是 `powershell` (Windows PowerShell 5.1),
+它对**没有 BOM** 的脚本按系统 ANSI 代码页解码, 脚本里的中文会被解成乱码, 并且很容易把引号、
+括号一起解坏, 直接报 ParserError —— 也就是说没 BOM 时启动器根本调不起安装脚本。
+CI 有一条 BOM 检查卡这个 (pwsh 7 按 UTF-8 读, 所以直接 `.\scripts\setup-windows.ps1` 反而看不出问题)。
+
 **中文输出编码。** Windows 上 stdout 不是真实控制台（被重定向/管道）时会退回 cp1252，
 打印中文直接 `UnicodeEncodeError`——连 logo 都出不来。`main.py` 和 `smoke_test.py` 启动时
 都会把 stdout/stderr 重配为 UTF-8，启动脚本另外设了 `PYTHONUTF8=1`。新增入口点时记得带上。
