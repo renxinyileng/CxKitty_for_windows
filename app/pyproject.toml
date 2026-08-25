@@ -23,6 +23,10 @@ dependencies = [
     # 与 ddddocr 保持一致: 桌面端用完整版, linux (docker) 用 headless 版, 以省去 GUI 系统库依赖
     "opencv-python>=4.12,<6; sys_platform == 'win32' or sys_platform == 'darwin'",
     "opencv-python-headless>=4.12,<6; sys_platform == 'linux'",
+    # 大模型答题器统一走 OpenAI 兼容接口, 各服务商适配见 resolver/searcher/llm/
+    "openai>=1.109.1,<3",
+    # 配置编辑器用其读写 config.yml, 以保留注释与格式
+    "ruamel.yaml>=0.18.17,<0.20",
 ]
 
 [project.urls]

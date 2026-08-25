@@ -1,6 +1,22 @@
 #!/bin/python3
-import json
 import sys
+
+# Windows 上只有 stdout 接真实控制台时才用 UTF-8, 一旦被重定向到文件/管道就退回
+# locale 编码 (如 cp1252), 输出中文会直接 UnicodeEncodeError。启动脚本里虽然设了
+# PYTHONUTF8, 但直接用 runtime\python.exe main.py 拉起时不经过脚本, 故在此兜底。
+# 放在最前面, 使配置编辑器 (下面的 --config 分支) 也能受益。
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
+# 配置编辑器需要在 import config 之前处理: config.py 在 import 期就会读取 config.yml,
+# 配置缺失/写坏时会直接抛错, 那正是最需要打开编辑器的时候
+if {"--config", "-c"} & set(sys.argv[1:]):
+    from config_editor import main as config_editor
+
+    sys.exit(config_editor())
+
+import json
 import time
 from os import PathLike
 
@@ -27,13 +43,6 @@ from cxapi.exception import ChapterNotOpened, TaskPointError
 from logger import Logger
 from resolver import DocumetResolver, MediaPlayResolver, QuestionResolver
 from utils import __version__, ck2dict, sessions_load
-
-# Windows 上只有 stdout 接真实控制台时才用 UTF-8, 一旦被重定向到文件/管道就退回
-# locale 编码 (如 cp1252), 输出中文会直接 UnicodeEncodeError。启动脚本里虽然设了
-# PYTHONUTF8, 但直接用 runtime\python.exe main.py 拉起时不经过脚本, 故在此兜底。
-for _stream in (sys.stdout, sys.stderr):
-    if hasattr(_stream, "reconfigure"):
-        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 api = ChaoXingAPI()
 console = Console(height=config.TUI_MAX_HEIGHT)
@@ -172,7 +181,7 @@ def fuck_task_worker(chap: ChapterContainer):
                     task_point.fetch_attachment()
                 except ChapterNotOpened:
                     if refresh_flag:
-                        chap.refresh_chapter(index-1)
+                        chap.refresh_chapter(index - 1)
                         refresh_flag = False
                         continue
                     else:
