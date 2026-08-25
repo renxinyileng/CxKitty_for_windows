@@ -28,6 +28,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Windows PowerShell 5.1 (启动.bat 调的就是它) 对没有 BOM 的脚本按 ANSI 解码,
+      # 中文注释会被解成乱码并直接把脚本解析坏, 所以 .ps1 必须带 UTF-8 BOM
+      - name: PowerShell 脚本 BOM 检查 (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          for f in scripts/*.ps1; do
+            head -c 3 "$f" | od -An -tx1 | grep -q "ef bb bf" \
+              || { echo "$f 缺少 UTF-8 BOM"; exit 1; }
+            echo "ok: $f 带 BOM"
+          done
+
       # 非 windows 平台不自动装解释器, 启动器应当只提示并退出 (退出码 1)
       - name: 启动器缺环境提示检查 (Unix)
         if: runner.os != 'Windows'

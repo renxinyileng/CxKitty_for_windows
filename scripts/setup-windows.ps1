@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     为 CxKitty 准备 Windows 运行环境。
 
