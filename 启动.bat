@@ -5,14 +5,9 @@ set PYTHONUTF8=1
 cd /d "%~dp0"
 set "blank=0"
 
-rem 首次运行时自动下载 Python 运行时并安装依赖
-if not exist "runtime\python.exe" (
-    echo 未检测到运行时, 开始自动准备环境...
-    echo.
-    call :setup
-    if errorlevel 1 exit /b 1
-    echo.
-)
+rem 首次运行 (或依赖被删/上次装到一半) 时自动准备环境
+call :ensure_env
+if errorlevel 1 exit /b 1
 
 :menu
 echo ============================================
@@ -77,6 +72,29 @@ echo.
 pause
 echo.
 goto menu
+
+:ensure_env
+rem 检测 Python 环境, 缺什么就自动补什么。windows 上只用 runtime\ 下的便携
+rem (嵌入式) 解释器, 不去碰系统里已装的 Python, 所以这里只认这一个位置。
+if not exist "runtime\python.exe" (
+    echo 未检测到 Python 运行时, 开始自动准备环境...
+    echo.
+    call :setup
+    if errorlevel 1 exit /b 1
+    echo.
+    exit /b 0
+)
+rem 解释器在, 再确认依赖齐全 (scripts\check_env.py 只查不导入, 很快)
+runtime\python.exe scripts\check_env.py
+if errorlevel 1 (
+    echo.
+    echo 运行环境不完整, 开始自动补装依赖...
+    echo.
+    call :setup
+    if errorlevel 1 exit /b 1
+    echo.
+)
+exit /b 0
 
 :setup
 rem 调用环境准备脚本, 参数原样透传 (如 -Force)
