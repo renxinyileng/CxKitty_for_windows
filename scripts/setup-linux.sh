@@ -143,7 +143,14 @@ step "升级 pip ..."
 step "安装项目依赖 ..."
 "$VENV_DIR/bin/python" -m pip install -r "$REQ_FILE" "${PIP_ARGS[@]+"${PIP_ARGS[@]}"}"
 
+step "环境自检 ..."
+# 与启动器共用 scripts/check_env.py, 免得两边对"环境完整"的定义走偏
+# pip 只看 dist-info 元数据, 包目录被手工删掉时它会认为"已安装"而不补装, 故这里兜一层
+"$VENV_DIR/bin/python" "$SCRIPT_DIR/check_env.py" ||
+    die "依赖安装完成但环境自检未通过, 请检查上面的 pip 输出, 或加 --force 重建 .venv"
+
 ok "环境准备完成"
 echo
-echo "运行方式:  cd app && ../.venv/bin/python main.py"
+echo "运行方式:  ./启动.sh   (菜单; 也可以 cd app && ../.venv/bin/python main.py)"
+echo "改配置:    ./启动.sh 选 [2], 或 cd app && ../.venv/bin/python main.py --config"
 echo "配置文件:  app/config.yml"
