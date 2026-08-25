@@ -17,6 +17,11 @@ Python 运行时不再随仓库分发，改为由安装脚本按需下载：脚�
 3. 双击 `启动.bat`
 
 首次运行会自动下载 Python 运行时并安装依赖（需要联网，视网速约几分钟），之后再运行就直接启动了。
+以后每次启动都会先自检一遍环境，运行时被删、依赖装到一半（下载中断、手工删过包）时会自动补装，
+不需要你手工去跑安装脚本。
+
+Windows 端**只使用便携（嵌入式）Python**：解释器和依赖全部装在仓库里的 `runtime\`，
+不读取、也不改动系统里已装的 Python；不想要了直接删掉 `runtime\` 整个目录即可。
 
 `启动.bat` 是个菜单，直接回车即为启动程序：
 
@@ -68,11 +73,17 @@ python.org 只为 Windows 提供嵌入式发行版，所以这两个平台改为
 ./scripts/setup-linux.sh --force
 ```
 
-运行：
+运行（`启动.sh` 是 `启动.bat` 的对应物，菜单一样）：
 
 ```bash
-cd app && ../.venv/bin/python main.py
+./启动.sh                                  # 菜单: 启动 / 配置编辑器 / 环境自检
+cd app && ../.venv/bin/python main.py      # 或者直接跑
 ```
+
+**这两个平台不会自动装 Python**：python.org 只为 Windows 提供免安装的嵌入式发行版，
+Linux/macOS 上装解释器要动系统（包管理器 / pyenv / uv），装什么、装到哪该由你决定。
+所以 `启动.sh` 检测到没有 `.venv` 或依赖不全时只会提示你去跑 `scripts/setup-linux.sh`
+（macOS 上是 `setup-macos.sh`），不会擅自安装。
 
 也可以用 Docker（镜像基于 `python:3.13`，Linux 下装的是 headless 版 OpenCV，无需额外 GUI 系统库）：
 
@@ -100,11 +111,13 @@ Kimi、通义千问、智谱、硅基流动、Gemini、火山方舟、本地 Oll
 ## 目录结构
 
 ```
-├── 启动.bat            Windows 一键启动菜单 (缺运行时会自动安装)
+├── 启动.bat            Windows 一键启动菜单 (环境缺失会自动安装/补装)
+├── 启动.sh             Linux/macOS 启动菜单 (环境缺失只提示, 不自动装)
 ├── scripts/            各系统的环境准备脚本
 │   ├── setup-windows.ps1 / .bat
 │   ├── setup-linux.sh
-│   └── setup-macos.sh
+│   ├── setup-macos.sh
+│   └── check_env.py    环境完整性检查 (启动器与安装脚本共用)
 ├── app/                CxKitty 程序本体 (main.py / config.yml / cxapi / resolver ...)
 ├── runtime/            Windows 嵌入式 Python, 由脚本生成, 不入库
 └── .venv/              Linux/macOS 虚拟环境, 由脚本生成, 不入库

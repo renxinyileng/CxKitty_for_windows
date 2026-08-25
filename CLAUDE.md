@@ -13,7 +13,7 @@ Python 运行时**不入库**，由 `scripts/setup-*` 按需下载：
 | 目录 | 内容 | 是否入库 |
 |---|---|---|
 | `app/` | 程序本体（`main.py` / `config_editor.py` / `cxapi` / `resolver` / `pyproject.toml` / `config.yml`） | 是 |
-| `scripts/` | 各平台环境准备脚本 + `smoke_test.py` | 是 |
+| `scripts/` | 各平台环境准备脚本 + `check_env.py` + `smoke_test.py` | 是 |
 | `runtime/` | Windows 嵌入式 Python（setup-windows.ps1 下载解压） | 否 |
 | `.venv/` | Linux/macOS 虚拟环境 | 否 |
 
@@ -29,8 +29,12 @@ Python 运行时**不入库**，由 `scripts/setup-*` 按需下载：
 ./scripts/setup-linux.sh --index-url https://pypi.org/simple
 
 # 运行
-cd app && ../.venv/bin/python main.py     # Linux/macOS
-启动.bat                                   # Windows（菜单；缺 runtime 会自动安装）
+./启动.sh                                  # Linux/macOS（菜单；缺环境只提示）
+cd app && ../.venv/bin/python main.py     # 或直接跑
+启动.bat                                   # Windows（菜单；缺环境自动装/补装）
+
+# 环境是否完整（启动器与安装脚本共用同一判断）
+./.venv/bin/python scripts/check_env.py
 
 # 可视化改配置（保留 config.yml 注释，覆盖前备份为 config.yml.bak）
 cd app && ../.venv/bin/python main.py --config
@@ -112,6 +116,15 @@ AI 组，把各家答案归一化后投票，达到 `ai_min_votes` 的排到最�
 `FileNotFoundError`，或 `Path(None)` 抛 `TypeError`。改 `pyproject.toml` 时别在
 `[project] version` 之前插入任何含 `version = ` 的行。
 
+**两个启动器的策略是不对称的, 这是刻意的。** `启动.bat` 在启动前调 `scripts/check_env.py`,
+发现运行时缺失或依赖不全就自动跑 `setup-windows.ps1`（解释器在、只缺依赖时该脚本不重下解释器,
+只补装依赖）——因为 Windows 全程只用 `runtime\` 下的便携解释器, 装/删都不出仓库目录。
+`启动.sh` 用同一个 `check_env.py` 判断, 但**只提示不安装**: Linux/macOS 上装解释器要动系统,
+该由用户决定。改环境检测逻辑时只改 `check_env.py`, 三个脚本共用它。
+
+注意 pip 只看 `dist-info` 元数据: 包目录被手工删掉时它认为"已安装"而不会补装, 所以安装脚本
+装完还要再跑一次 `check_env.py` 兜底, 不通过就提示 `--force` / `-Force` 重建。
+
 **Windows 嵌入式 Python 的 `._pth` 决定 `sys.path`。** 带 `._pth` 时解释器进 isolated 模式，
 脚本所在目录**不会**自动进 `sys.path`。`runtime/` 与 `app/` 分离后，`setup-windows.ps1`
 必须往 `python313._pth` 写入 `..\app` 和 `import site`，否则 `import cxapi` 直接失败。
@@ -122,6 +135,11 @@ AI 组，把各家答案归一化后投票，达到 `ai_min_votes` 的排到最�
 `cxapi/face_detection.py` 里的 `ndarray.tobytes()`（上游仍在用 numpy 2.0 已移除的 `tostring()`
 和直接传 ndarray）。`pyproject.toml` / `poetry.lock` / `requirements.txt` / `Dockerfile` /
 `.github/` / `run.bat` 也归本 fork 所有，不要用上游版本覆盖。
+
+**`scripts/*.ps1` 必须带 UTF-8 BOM。** `启动.bat` 调的是 `powershell` (Windows PowerShell 5.1),
+它对**没有 BOM** 的脚本按系统 ANSI 代码页解码, 脚本里的中文会被解成乱码, 并且很容易把引号、
+括号一起解坏, 直接报 ParserError —— 也就是说没 BOM 时启动器根本调不起安装脚本。
+CI 有一条 BOM 检查卡这个 (pwsh 7 按 UTF-8 读, 所以直接 `.\scripts\setup-windows.ps1` 反而看不出问题)。
 
 **中文输出编码。** Windows 上 stdout 不是真实控制台（被重定向/管道）时会退回 cp1252，
 打印中文直接 `UnicodeEncodeError`——连 logo 都出不来。`main.py` 和 `smoke_test.py` 启动时

@@ -28,6 +28,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Windows PowerShell 5.1 (启动.bat 调的就是它) 对没有 BOM 的脚本按 ANSI 解码,
+      # 中文注释会被解成乱码并直接把脚本解析坏, 所以 .ps1 必须带 UTF-8 BOM
+      - name: PowerShell 脚本 BOM 检查 (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          for f in scripts/*.ps1; do
+            # macOS 的 BSD od 与 GNU od 的分隔宽度不同, 去掉空白后再比对
+            head=$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')
+            [ "$head" = "efbbbf" ] || { echo "$f 缺少 UTF-8 BOM (开头 3 字节: $head)"; exit 1; }
+            echo "ok: $f 带 BOM"
+          done
+
+      # 非 windows 平台不自动装解释器, 启动器应当只提示并退出 (退出码 1)
+      - name: 启动器缺环境提示检查 (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          set +e
+          out=$(./启动.sh < /dev/null 2>&1); code=$?
+          set -e
+          echo "$out"
+          [ "$code" -eq 1 ] || { echo "期望退出码 1, 实际 $code"; exit 1; }
+          echo "$out" | grep -q "未检测到 Python 环境" || { echo "缺少'未检测到环境'提示"; exit 1; }
+          [ ! -e .venv ] || { echo "本平台不应自动创建 .venv"; exit 1; }
+          echo "ok: 缺环境时只提示, 未自动安装"
+
       - name: 准备环境 (Windows)
         if: runner.os == 'Windows'
         run: .\scripts\setup-windows.ps1
@@ -88,6 +113,28 @@ jobs:
               }
           }
           Write-Host "ok: 启动器菜单渲染正常, 空输入可启动程序并正常退出"
+          $LASTEXITCODE = 0
+
+      - name: 启动器菜单回归检查 (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          out=$(./启动.sh < /dev/null 2>&1)
+          echo "$out"
+          echo "$out" | grep -q "CxKitty" || { echo "菜单未渲染"; exit 1; }
+          echo "$out" | grep -q "\[2\]" || { echo "菜单项缺失"; exit 1; }
+          echo "ok: 环境就绪时启动器正常出菜单"
+
+      # 卸掉一个包制造"环境不完整", 启动器应当自己发现并补装 (无需用户干预)
+      - name: 启动器自动补装依赖检查 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .\runtime\python.exe -m pip uninstall -y qrcode | Out-Null
+          .\runtime\python.exe .\scripts\check_env.py
+          if ($LASTEXITCODE -eq 0) { throw "卸载 qrcode 后环境自检仍通过, 检测逻辑没生效" }
+          $out = (cmd /c "启动.bat < NUL 2>&1") -join "`n"
+          .\runtime\python.exe .\scripts\check_env.py
+          if ($LASTEXITCODE -ne 0) { Write-Host $out; throw "启动器未自动补回缺失的依赖" }
+          Write-Host "ok: 依赖缺失时启动器自动补装"
           $LASTEXITCODE = 0
 
       - name: 幂等性检查 (重复执行应跳过安装)
