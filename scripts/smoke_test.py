@@ -214,7 +214,10 @@ def test_config_editor():
     import config_editor
 
     editor = config_editor.ConfigEditor()  # 只读到内存, 不落盘
-    origin = Path("config.yml").read_text(encoding="utf8")
+    # newline="" 关掉换行转换: windows 上检出的是 CRLF, 编辑器也按 CRLF 回写,
+    # 用默认的通用换行读取会把原文换成 LF, 比对必然不一致
+    with open("config.yml", encoding="utf8", newline="") as file:
+        origin = file.read()
     assert editor.dumps() == origin, "配置原样回写后与原文不一致 (注释或格式被破坏)"
 
     editor.set("video.speed", 2.0)
