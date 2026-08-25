@@ -34,8 +34,9 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           for f in scripts/*.ps1; do
-            head -c 3 "$f" | od -An -tx1 | grep -q "ef bb bf" \
-              || { echo "$f 缺少 UTF-8 BOM"; exit 1; }
+            # macOS 的 BSD od 与 GNU od 的分隔宽度不同, 去掉空白后再比对
+            head=$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')
+            [ "$head" = "efbbbf" ] || { echo "$f 缺少 UTF-8 BOM (开头 3 字节: $head)"; exit 1; }
             echo "ok: $f 带 BOM"
           done
 
