@@ -9,7 +9,11 @@
       3. 修改 pythonXYZ._pth, 启用 site 并把 app\ 加入模块搜索路径
       4. 通过 get-pip.py 装上 pip, 再按 app\requirements.txt 安装全部依赖
 
-    脚本可重复执行。默认会跳过已安装好的运行时, 需要重装时加 -Force。
+    Windows 上只使用这份便携 (嵌入式) 解释器, 不会去找、也不会改动系统里已装的
+    Python —— 装在 runtime\ 下, 删掉整个目录即可彻底卸载。
+
+    脚本可重复执行: 运行时已就绪就直接跳过; 解释器在但依赖不全 (上次装到一半、
+    手工删过包) 只补装依赖, 不重下解释器; 需要整个重装时加 -Force。
 
 .PARAMETER PythonSeries
     要安装的 Python 主版本系列, 默认 3.13。
@@ -179,11 +183,40 @@ function Install-Requirements {
     }
 }
 
+function Test-Dependencies {
+    <#
+      依赖是否齐全, 判断逻辑统一放在 scripts\check_env.py 里 (退出码 0 = 可用),
+      启动.bat 用的是同一个脚本, 免得两边对"环境完整"的定义走偏。
+    #>
+    $python = Join-Path $RuntimeDir "python.exe"
+    if (-not (Test-Path $python)) { return $false }
+    & $python (Join-Path $PSScriptRoot "check_env.py")
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Test-Pip {
+    $python = Join-Path $RuntimeDir "python.exe"
+    & $python -m pip --version | Out-Null
+    return ($LASTEXITCODE -eq 0)
+}
+
 # ---------------------------------------------------------------- main
 
 if ((Test-Path (Join-Path $RuntimeDir "python.exe")) -and -not $Force) {
-    Write-Ok "runtime\ 已存在, 跳过安装 (需要重装请加 -Force)"
     & (Join-Path $RuntimeDir "python.exe") -V
+    if (Test-Dependencies) {
+        Write-Ok "runtime\ 已就绪, 跳过安装 (需要重装请加 -Force)"
+        exit 0
+    }
+    # 解释器在、依赖不全: 补装依赖就够了, 没必要重新下载解释器
+    Write-Step "运行时已存在但依赖不完整, 补装依赖 ..."
+    if (-not (Test-Pip)) { Install-Pip }
+    Install-Requirements
+    # pip 只看 dist-info 元数据, 包目录被手工删掉时它会认为"已安装"而不补装, 故这里兜一层
+    if (-not (Test-Dependencies)) {
+        throw "补装依赖后环境仍不完整, 请加 -Force 重装 (.\scripts\setup-windows.ps1 -Force)"
+    }
+    Write-Ok "依赖已补齐"
     exit 0
 }
 
@@ -193,7 +226,11 @@ Set-PthFile
 Install-Pip
 Install-Requirements
 
+if (-not (Test-Dependencies)) {
+    throw "依赖安装完成但环境自检未通过, 请检查上面的 pip 输出"
+}
+
 Write-Ok "环境准备完成, Python $($target.Version) 已安装到 runtime\"
 Write-Host ""
 Write-Host "运行方式: 双击仓库根目录的 启动.bat" -ForegroundColor Yellow
-Write-Host "配置文件: app\config.yml" -ForegroundColor Yellow
+Write-Host "改配置:   启动.bat 菜单里选 [2] (可视化编辑 app\config.yml)" -ForegroundColor Yellow
