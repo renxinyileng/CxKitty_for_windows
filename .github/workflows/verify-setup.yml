@@ -72,6 +72,24 @@ jobs:
           Write-Host "ok: cp1252 环境下 logo 与中文提示均正常输出"
           $LASTEXITCODE = 0
 
+      # 启动器是纯 batch, 只能在 windows 上验证: 用 NUL 作标准输入跑一遍,
+      # 菜单里的"无输入"分支会先启动一次程序, 连续两次空输入后正常退出 (返回码 0)
+      # 断言只匹配 ASCII 部分, 避免控制台代码页把中文解成乱码导致误报
+      - name: 启动器菜单回归检查 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $out = (cmd /c "启动.bat < NUL 2>&1") -join "`n"
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { Write-Host $out; throw "启动.bat 返回码 $code" }
+          foreach ($needle in @("CxKitty", "[1]", "[2]", "[4]")) {
+              if ($out -notmatch [regex]::Escape($needle)) {
+                  Write-Host $out
+                  throw "启动.bat 输出缺少: $needle"
+              }
+          }
+          Write-Host "ok: 启动器菜单渲染正常, 空输入可启动程序并正常退出"
+          $LASTEXITCODE = 0
+
       - name: 幂等性检查 (重复执行应跳过安装)
         if: runner.os == 'Windows'
         run: .\scripts\setup-windows.ps1
