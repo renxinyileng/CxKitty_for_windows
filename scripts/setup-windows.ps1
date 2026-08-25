@@ -187,11 +187,19 @@ function Test-Dependencies {
     <#
       依赖是否齐全, 判断逻辑统一放在 scripts\check_env.py 里 (退出码 0 = 可用),
       启动.bat 用的是同一个脚本, 免得两边对"环境完整"的定义走偏。
+
+      注意必须把 check_env.py 的输出接住: 直接 `& python xxx.py` 会把它的 stdout
+      并进函数的返回值, 函数返回的就不是布尔而是"字符串 + 布尔"的数组,
+      而非空数组在 if() 里恒为真 —— 依赖缺了也会被当成环境完好。
     #>
     $python = Join-Path $RuntimeDir "python.exe"
     if (-not (Test-Path $python)) { return $false }
-    & $python (Join-Path $PSScriptRoot "check_env.py")
-    return ($LASTEXITCODE -eq 0)
+    $output = & $python (Join-Path $PSScriptRoot "check_env.py") 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Note ($output -join "; ")
+        return $false
+    }
+    return $true
 }
 
 function Test-Pip {

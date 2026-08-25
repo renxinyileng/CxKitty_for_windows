@@ -93,6 +93,16 @@ if errorlevel 1 (
     call :setup
     if errorlevel 1 exit /b 1
     echo.
+    rem 补装完再验一次: 装失败却继续启动的话, 用户只会看到一堆 ModuleNotFoundError
+    runtime\python.exe scripts\check_env.py
+    if errorlevel 1 (
+        echo.
+        echo 自动补装后环境仍不完整。请手工重装运行时:
+        echo     powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\setup-windows.ps1" -Force
+        pause
+        exit /b 1
+    )
+    echo.
 )
 exit /b 0
 
