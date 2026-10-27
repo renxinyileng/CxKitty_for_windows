@@ -8,8 +8,12 @@ authors = [{ name = "SocialSisterYi", email = "1440239038@qq.com" }]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "requests>=2.32.3,<3",
+    # urllib3 2.8.0 修复 HTTPS 代理 TLS 配置与流式响应 DoS 漏洞
+    "urllib3>=2.8.0,<3",
     # [pil] extra: 二维码登录会额外渲染一份 png 图片, 需要 Pillow
     "qrcode[pil]>=8.2,<9",
+    # Pillow 13.0.0 修复 2026-10 披露的多项内存安全漏洞 (含 CVE-2026-112403)
+    "pillow>=13.0.0,<14",
     "rich>=15.0.0,<16",
     "pycryptodome>=3.23.0,<4",
     "lxml>=6.0.0,<7",
