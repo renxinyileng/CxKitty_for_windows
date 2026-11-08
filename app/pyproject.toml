@@ -26,6 +26,10 @@ dependencies = [
     "numpy>=2.2.6,<3",
     "dataclasses-json>=0.6.7,<0.7",
     "yarl>=1.24.0,<2",
+    # yarl 的传递依赖: 6.9.1 修复 CVE-2026-104874 的引用泄漏
+    "multidict>=6.9.1,<7",
+    # 启动时按 requirements.txt 校验已安装依赖的版本与平台标记
+    "packaging>=26.2,<27",
     # 与 ddddocr 保持一致: 桌面端用完整版, linux (docker) 用 headless 版, 以省去 GUI 系统库依赖
     "opencv-python>=4.12,<6; sys_platform == 'win32' or sys_platform == 'darwin'",
     "opencv-python-headless>=4.12,<6; sys_platform == 'linux'",
@@ -52,7 +56,8 @@ priority = "primary"
 
 
 [tool.poetry.group.dev.dependencies]
-black = "^26.5.1"
+# 26.10.1 修复随包分发的 GitHub Action 漏洞 CVE-2026-114134
+black = "^26.10.1"
 isort = "^8.0.1"
 
 [tool.black]

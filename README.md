@@ -6,7 +6,8 @@
 
 Python 运行时不再随仓库分发，改为由安装脚本按需下载：脚本会去 python.org 探测
 3.13 系列中**最新的、且提供 Windows 嵌入式发行版的补丁版本**，下载后自动装好 pip 和全部依赖。
-这样解释器和依赖都能保持在最新的安全补丁版本，不必等仓库更新。
+依赖按仓库中的 `app/requirements.txt` 锁定版本安装; 更新项目后, 启动检查会发现
+旧版依赖并同步到本次经过验证的版本。已安装的 Python 解释器需要用 `-Force` 重装才能更新。
 
 ## Windows
 
@@ -17,7 +18,7 @@ Python 运行时不再随仓库分发，改为由安装脚本按需下载：脚�
 3. 双击 `启动.bat`
 
 首次运行会自动下载 Python 运行时并安装依赖（需要联网，视网速约几分钟），之后再运行就直接启动了。
-以后每次启动都会先自检一遍环境，运行时被删、依赖装到一半（下载中断、手工删过包）时会自动补装，
+以后每次启动都会先自检一遍环境，运行时被删、依赖装到一半或版本与清单不一致时会自动补装或升级，
 不需要你手工去跑安装脚本。
 
 Windows 端**只使用便携（嵌入式）Python**：解释器和依赖全部装在仓库里的 `runtime\`，
@@ -82,7 +83,7 @@ cd app && ../.venv/bin/python main.py      # 或者直接跑
 
 **这两个平台不会自动装 Python**：python.org 只为 Windows 提供免安装的嵌入式发行版，
 Linux/macOS 上装解释器要动系统（包管理器 / pyenv / uv），装什么、装到哪该由你决定。
-所以 `启动.sh` 检测到没有 `.venv` 或依赖不全时只会提示你去跑 `scripts/setup-linux.sh`
+所以 `启动.sh` 检测到没有 `.venv`、依赖不全或版本不符时只会提示你去跑 `scripts/setup-linux.sh`
 （macOS 上是 `setup-macos.sh`），不会擅自安装。
 
 也可以用 Docker（镜像基于 `python:3.13`，Linux 下装的是 headless 版 OpenCV，无需额外 GUI 系统库）：
@@ -127,3 +128,16 @@ Kimi、通义千问、智谱、硅基流动、Gemini、火山方舟、本地 Oll
 
 `>= 3.11, < 3.14`。3.10 将于 2026 年 10 月结束安全支持，且 3.10.11 已是该系列
 最后一个提供 Windows 嵌入式发行版的版本（之后的补丁版只发布源码），故不再作为目标版本。
+
+## 依赖安全更新
+
+2026-11-08 的更新将 `multidict` 升至 6.9.1、开发工具 `black` 升至 26.10.1,
+分别处理 [CVE-2026-104874](https://github.com/advisories/GHSA-54p9-h82j-f925)
+和 [CVE-2026-114134](https://github.com/advisories/GHSA-cg8m-r9f2-5wm2)。
+Black 的公告针对其附带的 GitHub Action, 本仓库没有启用该 Action; 仍升级开发依赖以清除受影响版本。
+
+已有安装先更新仓库文件: Windows 下重新运行 `启动.bat` 会自动同步依赖,
+Linux/macOS 下执行对应的 `scripts/setup-*.sh`。日常启动检查是离线版本校验,
+不会查询最新漏洞数据库; CI 会对锁文件中的全部平台及开发依赖执行 `pip-audit`,
+并检查 `pyproject.toml`、`poetry.lock` 与导出的 `requirements.txt` 一致。
+审计无告警表示当次数据库未报告已知漏洞, 不代表不存在未知漏洞。
