@@ -12,7 +12,7 @@
     Windows 上只使用这份便携 (嵌入式) 解释器, 不会去找、也不会改动系统里已装的
     Python —— 装在 runtime\ 下, 删掉整个目录即可彻底卸载。
 
-    脚本可重复执行: 运行时已就绪就直接跳过; 解释器在但依赖不全 (上次装到一半、
+    脚本可重复执行: 运行时已就绪就直接跳过; 解释器在但依赖缺失或版本过旧 (上次装到一半、
     手工删过包) 只补装依赖, 不重下解释器; 需要整个重装时加 -Force。
 
 .PARAMETER PythonSeries
@@ -185,7 +185,7 @@ function Install-Requirements {
 
 function Test-Dependencies {
     <#
-      依赖是否齐全, 判断逻辑统一放在 scripts\check_env.py 里 (退出码 0 = 可用),
+      依赖是否齐全且版本符合锁定清单, 判断逻辑统一放在 scripts\check_env.py 里 (退出码 0 = 可用),
       启动.bat 用的是同一个脚本, 免得两边对"环境完整"的定义走偏。
 
       注意必须把 check_env.py 的输出接住: 直接 `& python xxx.py` 会把它的 stdout
@@ -217,7 +217,7 @@ if ((Test-Path (Join-Path $RuntimeDir "python.exe")) -and -not $Force) {
         exit 0
     }
     # 解释器在、依赖不全: 补装依赖就够了, 没必要重新下载解释器
-    Write-Step "运行时已存在但依赖不完整, 补装依赖 ..."
+    Write-Step "运行时已存在但依赖缺失或版本不符, 同步依赖 ..."
     if (-not (Test-Pip)) { Install-Pip }
     Install-Requirements
     # pip 只看 dist-info 元数据, 包目录被手工删掉时它会认为"已安装"而不补装, 故这里兜一层

@@ -84,11 +84,11 @@ if not exist "runtime\python.exe" (
     echo.
     exit /b 0
 )
-rem 解释器在, 再确认依赖齐全 (scripts\check_env.py 只查不导入, 很快)
+rem 解释器在, 再确认模块齐全且依赖版本符合 requirements.txt
 runtime\python.exe scripts\check_env.py
 if errorlevel 1 (
     echo.
-    echo 运行环境不完整, 开始自动补装依赖...
+    echo 运行环境需要更新, 开始同步依赖...
     echo.
     call :setup
     if errorlevel 1 exit /b 1
