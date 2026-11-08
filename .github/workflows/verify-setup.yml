@@ -58,6 +58,13 @@ jobs:
           [ ! -e .venv ] || { echo "本平台不应自动创建 .venv"; exit 1; }
           echo "ok: 缺环境时只提示, 未自动安装"
 
+      # runner 镜像升级后系统 Python 可能超出项目支持范围, 显式准备 3.13。
+      - name: 准备受支持的 Python (Unix)
+        if: runner.os != 'Windows'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+
       - name: 准备环境 (Windows)
         if: runner.os == 'Windows'
         run: .\scripts\setup-windows.ps1
