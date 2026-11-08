@@ -32,9 +32,9 @@ if [ ! -x "$VENV_PY" ]; then
 fi
 
 if ! "$VENV_PY" scripts/check_env.py; then
-    red "Python 环境不完整 (依赖缺失或装到一半)"
+    red "Python 环境需要更新 (依赖缺失或版本不符)"
     yellow "本平台不会自动补装, 请执行:"
-    echo "    $SETUP_SCRIPT          # 补装缺失的依赖"
+    echo "    $SETUP_SCRIPT          # 同步依赖到项目锁定版本"
     echo "    $SETUP_SCRIPT --force  # 依然不行就重建 .venv"
     exit 1
 fi
