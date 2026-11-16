@@ -1,6 +1,6 @@
-# CLAUDE.md
+# 项目开发指南
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides development guidance for working with this repository.
 
 ## 这个仓库是什么
 
